@@ -8,7 +8,7 @@ from robotics_utils import *
 
 class robot_obj(object):
 	###robot object class
-	def __init__(self,robot_name,def_path,tool_file_path='',base_transformation_file='',acc_dict_path=''):
+	def __init__(self,robot_name,def_path,tool_file_path='',base_transformation_file='',acc_dict_path='',d=0):
 		#def_path: robot 			definition yaml file, name must include robot vendor
 		#tool_file_path: 			tool transformation to robot flange csv file
 		#base_transformation_file: 	base transformation to world frame csv file
@@ -102,7 +102,7 @@ class robot_obj(object):
 
 		if q_all.ndim==1:
 			q=q_all
-			pose_temp=fwdkin(self.robot,q)
+			pose_temp=fwdkin(self.robot,q, _ignore_limits = qlim_override)
 
 			if world:
 				pose_temp.p=self.base_H[:3,:3]@pose_temp.p+self.base_H[:3,-1]
@@ -112,7 +112,7 @@ class robot_obj(object):
 			pose_p_all=[]
 			pose_R_all=[]
 			for q in q_all:
-				pose_temp=fwdkin(self.robot,q)
+				pose_temp=fwdkin(self.robot,q, _ignore_limits = qlim_override)
 				if world:
 					pose_temp.p=self.base_H[:3,:3]@pose_temp.p+self.base_H[:3,-1]
 					pose_temp.R=self.base_H[:3,:3]@pose_temp.R
@@ -130,6 +130,14 @@ class robot_obj(object):
 		q_all=robot6_sphericalwrist_invkin(self.robot,pose,last_joints)
 		
 		return q_all
+	
+	def iter_inv(self,p,R,last_joints):
+		pose=Transform(R,p)
+		converged, q_normed = iterative_invkin(self.robot,pose,last_joints)
+		if converged:
+			return q_normed
+		else:
+			raise Exception('Inverse kinematics did not converge')
 	
 	###find a continous trajectory given Cartesion pose trajectory
 	def find_curve_js(self,curve,curve_R,q_seed=None):
