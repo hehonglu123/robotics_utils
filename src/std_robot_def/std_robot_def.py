@@ -135,7 +135,7 @@ class robot_obj(object):
 		pose=Transform(R,p)
 		converged, q_normed = iterative_invkin(self.robot,pose,last_joints)
 		if converged:
-			return q_normed
+			return np.array(q_normed[0])
 		else:
 			raise Exception('Inverse kinematics did not converge')
 	
